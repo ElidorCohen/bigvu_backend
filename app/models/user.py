@@ -46,10 +46,20 @@ class User:
     def find_by_id(user_id):
         db = current_app.mongo.client['bigvu']
         users_collection = db['users']
+        notes_collection = db['notes']
+
         user_data = users_collection.find_one({"_id": ObjectId(user_id)})
         if user_data:
-            return User(user_data['username'], user_data['hashed_password'], str(user_data['_id']))
-        return None
+            user = User(user_data['username'], user_data['hashed_password'], str(user_data['_id']))
+
+            latest_note = notes_collection.find({"user_id": ObjectId(user_id)}).sort("created_at", -1).limit(1)
+            latest_sentiment = None
+            latest_note_list = list(latest_note)  # Convert cursor to list to check for results
+            if latest_note_list:
+                latest_sentiment = latest_note_list[0].get("sentiment", None)
+
+            return user, latest_sentiment
+        return None, None
 
     @staticmethod
     def get_all_users():

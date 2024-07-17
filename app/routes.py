@@ -99,9 +99,14 @@ class Profile(Resource):
         data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
         user_id = data['id']
 
-        user = User.find_by_id(user_id)
+        user, latest_sentiment = User.find_by_id(user_id)
         if user:
-            return {"username": user.username, "user_id": user.id}, 200
+            profile = {
+                "username": user.username,
+                "user_id": user.id,
+                "latest_sentiment": latest_sentiment
+            }
+            return profile, 200
         else:
             return {"msg": "User not found."}, 404
 
@@ -208,12 +213,10 @@ class RetrieveNoteById(Resource):
         decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
         user_id = decoded_token['id']
 
-        # Retrieve the note by ID
         note, error = Note.get_note_by_id(id)
         if error:
             return {"msg": error}, 404
 
-        # Check if the note is created by the user or by a user they are subscribed to
         subscribed_to_ids = Subscribers.get_subscriptions(user_id)
         if str(note.user_id) == user_id or ObjectId(note.user_id) in subscribed_to_ids:
             return {"note": note.to_dict(convert_id=True, convert_time=True)}, 200
