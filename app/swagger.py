@@ -1,5 +1,7 @@
 from flask_restx import Api
 from app.routes import auth_ns as auth_namespace
+from app.routes import note_ns as note_namespace
+
 
 api = Api(
     title='BIGVU Task API',
@@ -16,5 +18,7 @@ api = Api(
 )
 
 api.add_namespace(auth_namespace, path='/auth')
+api.add_namespace(note_namespace, path='/notes')
+
 
 

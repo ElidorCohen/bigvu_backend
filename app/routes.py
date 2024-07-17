@@ -1,16 +1,24 @@
 import jwt
-from flask import request, jsonify, current_app
+from flask import request, Response, current_app
 from flask_restx import Namespace, Resource, fields
-
+import json
+from app.models.notes import Note
 from app.models.user import User
 from app.services.authentication import AuthenticationServices, token_required
 from app.validators import validate_register_input
 
+
 auth_ns = Namespace('auth', description='Authentication Operations')
+note_ns = Namespace('notes', description='Notes Operations')
 
 user_model = auth_ns.model('User', {
     'username': fields.String(required=True, description='The username'),
     'password': fields.String(required=True, description='The user password'),
+})
+
+note_model = note_ns.model('Note', {
+    'title': fields.String(required=True, description='The title of the note'),
+    'body': fields.String(required=True, description='The body of the note'),
 })
 
 
@@ -88,8 +96,36 @@ class Profile(Resource):
 
         user = User.find_by_id(user_id)
         if user:
-            return {"username": user.username}, 200
+            return {"username": user.username, "user_id": user.id}, 200
         else:
             return {"msg": "User not found."}, 404
 
 
+@note_ns.route('/')
+class CreateNote(Resource):
+    @note_ns.expect(note_model, validate=True)
+    @note_ns.doc(description='Create a new note. Requires a valid JWT token.',
+                 responses={
+                     200: 'Note created successfully',
+                     400: 'Bad request',
+                     401: 'Unauthorized',
+                     403: 'Token is missing!'
+                 },
+                 security='Bearer Auth')
+    @token_required
+    def post(self):
+        """Create a new note"""
+        data = request.json
+        title = data.get('title')
+        body = data.get('body')
+
+        if not title or not body:
+            return {"msg": "Title and body are required"}, 400
+
+        token = request.headers.get('Authorization').split()[1]
+        decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+        user_id = decoded_token['id']
+
+        note = Note.create_note(title, body, user_id)
+        print("Second note print: ", note)
+        return {"msg": "Note created successfully", "note": str(note)}, 200
