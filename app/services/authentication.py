@@ -7,14 +7,6 @@ from flask import request, current_app
 
 class AuthenticationServices:
     @staticmethod
-    def register_user(username, password):
-        user, message = User.create_user(username, password)
-        if user:
-            return user, message
-        else:
-            return None, message
-
-    @staticmethod
     def authenticate_user(username, password):
         user = User.find_by_username(username)
         if user and User.verify_password(user.hashed_password, password):
@@ -30,6 +22,13 @@ class AuthenticationServices:
             'exp': expiration
         }, current_app.config['SECRET_KEY'], algorithm="HS256")
         return token
+
+    @staticmethod
+    def get_user_id_from_token():
+        token = request.headers.get('Authorization').split()[1]
+        decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+        user_id = decoded_token['id']
+        return user_id
 
 
 def token_required(f):

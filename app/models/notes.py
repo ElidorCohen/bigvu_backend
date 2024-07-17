@@ -52,16 +52,20 @@ class Note:
     def get_notes(user_ids):
         db = current_app.mongo.client['bigvu']
         notes_collection = db['notes']
-        notes = notes_collection.find({"user_id": {"$in": [ObjectId(user_id) for user_id in user_ids]}})
-        return [Note(
-            title=note["title"],
-            body=note["body"],
-            user_id=note["user_id"],
-            sentiment=note["sentiment"],
-            note_id=note["_id"],
-            created_at=note["created_at"],
-            updated_at=note["updated_at"]
-        ) for note in notes]
+        try:
+            notes = notes_collection.find({"user_id": {"$in": [ObjectId(user_id) for user_id in user_ids]}})
+            return [Note(
+                title=note["title"],
+                body=note["body"],
+                user_id=note["user_id"],
+                sentiment=note["sentiment"],
+                note_id=note["_id"],
+                created_at=note["created_at"],
+                updated_at=note["updated_at"]
+            ) for note in notes]
+        except Exception as e:
+            logging.error(f"Failed to retrieve notes: {str(e)}")
+            raise Exception("Failed to retrieve notes.")
 
     @staticmethod
     def get_note_by_id(note_id):

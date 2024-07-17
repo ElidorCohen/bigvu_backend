@@ -1,3 +1,5 @@
+import logging
+
 import jwt
 from bson import ObjectId
 from flask import request, Response, current_app
@@ -20,7 +22,6 @@ user_model = auth_ns.model('User', {
     'username': fields.String(required=True, description='The username'),
     'password': fields.String(required=True, description='The user password'),
 })
-
 note_model = note_ns.model('Note', {
     'title': fields.String(required=True, description='The title of the note'),
     'body': fields.String(required=True, description='The body of the note'),
@@ -30,7 +31,7 @@ note_model = note_ns.model('Note', {
 @auth_ns.route('/register')
 class Register(Resource):
     @auth_ns.expect(user_model, validate=True)
-    @auth_ns.response(200, 'User registered successfully')
+    @auth_ns.response(201, 'User registered successfully')
     @auth_ns.response(400, 'Bad request')
     def post(self):
         data = request.json
@@ -45,9 +46,9 @@ class Register(Resource):
         if not is_valid:
             return {"msg": error_message}, 400
 
-        user, message = AuthenticationServices.register_user(username, password)
+        user, message = User.register_user(username, password)
         if user:
-            return {"msg":message,"user":user}, 200
+            return {"msg":message,"user":user}, 201
         else:
             return {"msg":message}, 400
 
@@ -74,15 +75,6 @@ class Login(Resource):
             return {"msg": "Invalid username or password"}, 400
 
 
-@auth_ns.route('/private')
-class Private(Resource):
-    @auth_ns.doc(security='Bearer Auth')
-    @auth_ns.doc(responses={200: 'Access granted.'})
-    @token_required
-    def get(self):
-        return {"message": "Access granted."}, 200
-
-
 @auth_ns.route('/profile')
 class Profile(Resource):
     @auth_ns.doc(description='Retrieve user profile. Requires a valid JWT token.',
@@ -95,9 +87,7 @@ class Profile(Resource):
     @token_required
     def get(self):
         """Retrieve user profile"""
-        token = request.headers.get('Authorization').split()[1]
-        data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        user_id = data['id']
+        user_id = AuthenticationServices.get_user_id_from_token()
 
         user, latest_sentiment = User.find_by_id(user_id)
         if user:
@@ -116,7 +106,7 @@ class CreateNote(Resource):
     @note_ns.expect(note_model, validate=True)
     @note_ns.doc(description='Create a new note. Requires a valid JWT token.',
                  responses={
-                     200: 'Note created successfully',
+                     201: 'Note created successfully',
                      400: 'Bad request',
                      401: 'Unauthorized',
                      403: 'Token is missing!'
@@ -132,13 +122,11 @@ class CreateNote(Resource):
         if not title or not body:
             return {"msg": "Title and body are required"}, 400
 
-        token = request.headers.get('Authorization').split()[1]
-        decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        user_id = decoded_token['id']
+        user_id = AuthenticationServices.get_user_id_from_token()
 
         note = Note.create_note(title, body, user_id)
         print("Second note print: ", note)
-        return {"msg": "Note created successfully", "note": str(note.note_id)}, 200
+        return {"msg": "Note created successfully", "note": str(note.note_id)}, 201
 
 
 @subscribe_ns.route('/<id>')
@@ -146,7 +134,7 @@ class Subscribe(Resource):
     @subscribe_ns.doc(description='Subscribe to a user\'s notes. Requires a valid JWT token.',
                       params={'id': 'The ID of the user to subscribe to'},
                       responses={
-                          200: 'Subscription created successfully',
+                          201: 'Subscription created successfully',
                           400: 'Bad request',
                           401: 'Unauthorized',
                           403: 'Token is missing!'
@@ -155,13 +143,11 @@ class Subscribe(Resource):
     @token_required
     def post(self, id):
         """Subscribe to a user's notes"""
-        token = request.headers.get('Authorization').split()[1]
-        decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        subscriber_id = decoded_token['id']
+        subscriber_id = AuthenticationServices.get_user_id_from_token()
 
         subscription, message = Subscribers.subscribe_to(subscriber_id, id)
         if subscription:
-            return {"msg": message, "subscription_id": str(subscription.subscription_id)}, 200
+            return {"msg": message, "subscription_id": str(subscription.subscription_id)}, 201
         else:
             return {"msg": message}, 400
 
@@ -180,9 +166,7 @@ class RetrieveNotes(Resource):
     @token_required
     def get(self):
         """Retrieve notes"""
-        token = request.headers.get('Authorization').split()[1]
-        decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        user_id = decoded_token['id']
+        user_id = AuthenticationServices.get_user_id_from_token()
 
         subscribed_to_ids = Subscribers.get_subscriptions(user_id)
 
@@ -209,9 +193,7 @@ class RetrieveNoteById(Resource):
     @token_required
     def get(self, id):
         """Retrieve a specific note by ID"""
-        token = request.headers.get('Authorization').split()[1]
-        decoded_token = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        user_id = decoded_token['id']
+        user_id = AuthenticationServices.get_user_id_from_token()
 
         note, error = Note.get_note_by_id(id)
         if error:
@@ -230,11 +212,16 @@ class ListAllUsers(Resource):
                  responses={
                      200: 'Users retrieved successfully',
                      401: 'Unauthorized',
-                     403: 'Token is missing!'
+                     403: 'Token is missing!',
+                     400: 'Error accessing the database'
                  },
                  security='Bearer Auth')
     @token_required
     def get(self):
         """List all users"""
-        users = User.get_all_users()
-        return {"users": users}, 200
+        try:
+            users = User.get_all_users()
+            return {"users": users}, 200
+        except Exception as e:
+            logging.error(f"Error accessing the database: {str(e)}")
+            return {"msg": "Error accessing the database"}, 400

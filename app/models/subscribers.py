@@ -1,3 +1,5 @@
+import logging
+
 from flask import current_app
 from bson import ObjectId
 from datetime import datetime
@@ -19,22 +21,36 @@ class Subscribers:
 
     @staticmethod
     def subscribe_to(subscriber_id, subscribed_to_id):
+        if subscriber_id == subscribed_to_id:
+            return None, "Use can't subscribe to himself."
+
         db = current_app.mongo.client['bigvu']
         subscribers_collection = db['subscribers']
+        try:
+            if subscribers_collection.find_one(
+                    {"subscriber_id": ObjectId(subscriber_id), "subscribed_to_id": ObjectId(subscribed_to_id)}):
+                return None, "Already subscribed to this user."
+        except Exception as e:
+            logging.error(f"Error checking subscription: {str(e)}")
+            return None, "Failed to check subscription status."
 
-        if subscribers_collection.find_one(
-                {"subscriber_id": ObjectId(subscriber_id), "subscribed_to_id": ObjectId(subscribed_to_id)}):
-            return None, "Already subscribed to this user."
-
-        subscription = Subscribers(subscriber_id, subscribed_to_id)
-        result = subscribers_collection.insert_one(subscription.to_dict())
-        subscription.subscription_id = result.inserted_id
-        return subscription, "Subscription created successfully."
+        try:
+            subscription = Subscribers(subscriber_id, subscribed_to_id)
+            result = subscribers_collection.insert_one(subscription.to_dict())
+            subscription.subscription_id = result.inserted_id
+            return subscription, "Subscription created successfully."
+        except Exception as e:
+            logging.error(f"Error creating subscription: {str(e)}")
+            return None, "Failed to create subscription."
 
     @staticmethod
     def get_subscriptions(subscriber_id):
         db = current_app.mongo.client['bigvu']
         subscribers_collection = db['subscribers']
-        subscriptions = subscribers_collection.find({"subscriber_id": ObjectId(subscriber_id)})
-        subscribed_to_ids = [subscription['subscribed_to_id'] for subscription in subscriptions]
-        return subscribed_to_ids
+        try:
+            subscriptions = subscribers_collection.find({"subscriber_id": ObjectId(subscriber_id)})
+            subscribed_to_ids = [subscription['subscribed_to_id'] for subscription in subscriptions]
+            return subscribed_to_ids
+        except Exception as e:
+            logging.error(f"Error accessing the database: {str(e)}")
+            return []
