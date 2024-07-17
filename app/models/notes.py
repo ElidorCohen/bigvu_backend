@@ -17,6 +17,7 @@ class Note:
 
     def to_dict(self, convert_id=False, convert_time=False):
         return {
+            "_id": str(self.note_id) if convert_id else ObjectId(self.note_id),
             "title": self.title,
             "body": self.body,
             "user_id": str(self.user_id) if convert_id else ObjectId(self.user_id),
@@ -41,10 +42,10 @@ class Note:
 
         try:
             result = notes_collection.insert_one(document)
+            note.note_id = result.inserted_id
         except Exception as e:
             logging.error(f"Failed to insert note: {str(e)}")
             return None, "Failed to insert note."
-        #note.note_id = result.inserted_id
         return note
 
     @staticmethod

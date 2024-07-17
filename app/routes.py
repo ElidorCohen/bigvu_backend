@@ -138,7 +138,7 @@ class CreateNote(Resource):
 
         note = Note.create_note(title, body, user_id)
         print("Second note print: ", note)
-        return {"msg": "Note created successfully", "note": str(note)}, 200
+        return {"msg": "Note created successfully", "note": str(note.note_id)}, 200
 
 
 @subscribe_ns.route('/<id>')
