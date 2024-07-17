@@ -50,3 +50,10 @@ class User:
         if user_data:
             return User(user_data['username'], user_data['hashed_password'], str(user_data['_id']))
         return None
+
+    @staticmethod
+    def get_all_users():
+        db = current_app.mongo.client['bigvu']
+        users_collection = db['users']
+        users = users_collection.find({}, {"username": 1})
+        return [{"_id": str(user["_id"]), "username": user["username"]} for user in users]
