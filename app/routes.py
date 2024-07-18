@@ -1,15 +1,13 @@
-import logging
-
-import jwt
 from bson import ObjectId
-from flask import request, Response, current_app
+from flask import request
 from flask_restx import Namespace, Resource, fields
-import json
 from app.models.notes import Note
 from app.models.subscribers import Subscribers
 from app.models.user import User
 from app.services.authentication import AuthenticationServices, token_required
 from app.validators import validate_register_input
+import logging
+from app.websocket.emit_controller import notify_subscribers
 
 
 auth_ns = Namespace('auth', description='Authentication Operations')
@@ -125,7 +123,9 @@ class CreateNote(Resource):
         user_id = AuthenticationServices.get_user_id_from_token()
 
         note = Note.create_note(title, body, user_id)
-        print("Second note print: ", note)
+
+        notify_subscribers(note, user_id)
+
         return {"msg": "Note created successfully", "note": str(note.note_id)}, 201
 
 

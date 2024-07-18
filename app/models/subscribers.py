@@ -54,3 +54,10 @@ class Subscribers:
         except Exception as e:
             logging.error(f"Error accessing the database: {str(e)}")
             return []
+
+    @staticmethod
+    def get_subscribers_for_user(user_id):
+        db = current_app.mongo.client['bigvu']
+        subscribers_collection = db['subscribers']
+        subscribers = subscribers_collection.find({"subscribed_to_id": ObjectId(user_id)})
+        return [str(subscriber["subscriber_id"]) for subscriber in subscribers]
