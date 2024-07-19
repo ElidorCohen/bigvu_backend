@@ -32,13 +32,13 @@ class Subscribers:
                 return None, "Already subscribed to this user."
         except Exception as e:
             logging.error(f"Error checking subscription: {str(e)}")
-            return None, "Failed to check subscription status."
+            return None, "Invalid ID provided"
 
         try:
             subscription = Subscribers(subscriber_id, subscribed_to_id)
             result = subscribers_collection.insert_one(subscription.to_dict())
             subscription.subscription_id = result.inserted_id
-            return subscription, "Subscription created successfully."
+            return subscription, "Subscription created successfully"
         except Exception as e:
             logging.error(f"Error creating subscription: {str(e)}")
             return None, "Failed to create subscription."
@@ -55,6 +55,7 @@ class Subscribers:
             logging.error(f"Error accessing the database: {str(e)}")
             return []
 
+    # Need to add try and except block here, lo lishkoah
     @staticmethod
     def get_subscribers_for_user(user_id):
         db = current_app.mongo.client['bigvu']

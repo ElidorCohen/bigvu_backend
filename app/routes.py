@@ -1,29 +1,14 @@
 from bson import ObjectId
 from flask import request
-from flask_restx import Namespace, Resource, fields
+from flask_restx import Resource
 from app.models.notes import Note
 from app.models.subscribers import Subscribers
 from app.models.user import User
 from app.services.authentication import AuthenticationServices, token_required
-from app.validators import validate_register_input
+from app.validators import validate_register_login_input, check_username_password_provided
 import logging
 from app.websocket.emit_controller import notify_subscribers
-
-
-auth_ns = Namespace('auth', description='Authentication Operations')
-note_ns = Namespace('notes', description='Notes Operations')
-subscribe_ns = Namespace('subscribe', description='Subscription Operations')
-user_ns = Namespace('users', description='User operations')
-
-
-user_model = auth_ns.model('User', {
-    'username': fields.String(required=True, description='The username'),
-    'password': fields.String(required=True, description='The user password'),
-})
-note_model = note_ns.model('Note', {
-    'title': fields.String(required=True, description='The title of the note'),
-    'body': fields.String(required=True, description='The body of the note'),
-})
+from app.models.api_models import auth_ns, note_ns, subscribe_ns, user_ns, user_model, note_model
 
 
 @auth_ns.route('/register')
@@ -36,19 +21,19 @@ class Register(Resource):
         username = data.get('username')
         password = data.get('password')
 
-        if not username or not password:
-            return {"msg": "Username and password are required"}, 400
+        is_provided, error_message = check_username_password_provided(username, password)
+        if not is_provided:
+            return {"msg": error_message}, 400
 
-        # Validate input:
-        is_valid, error_message = validate_register_input(username, password)
+        is_valid, error_message = validate_register_login_input(username, password)
         if not is_valid:
             return {"msg": error_message}, 400
 
         user, message = User.register_user(username, password)
         if user:
-            return {"msg":message,"user":user}, 201
+            return {"msg": message, "user": user}, 201
         else:
-            return {"msg":message}, 400
+            return {"msg": message}, 400
 
 
 @auth_ns.route('/login')
@@ -62,8 +47,13 @@ class Login(Resource):
         username = data.get('username')
         password = data.get('password')
 
-        if not username or not password:
-            return {"msg": "Username and password are required"}, 400
+        is_provided, error_message = check_username_password_provided(username, password)
+        if not is_provided:
+            return {"msg": error_message}, 400
+
+        is_valid, error_message = validate_register_login_input(username, password)
+        if not is_valid:
+            return {"msg": error_message}, 400
 
         user = AuthenticationServices.authenticate_user(username, password)
         if user:

@@ -1,7 +1,7 @@
 import re
 
 
-def validate_register_input(username, password):
+def validate_register_login_input(username, password):
     if len(username) < 8 or len(password) < 8:
         return False, "Username and password must be at least 8 characters long."
 
@@ -18,3 +18,14 @@ def validate_register_input(username, password):
         return False, "Password must contain at least one letter and one number."
 
     return True, ""
+
+
+def check_username_password_provided(username, password):
+    if not username and not password:
+        return False, "Username and password are required"
+    elif not username:
+        return False, "Username is required"
+    elif not password:
+        return False, "Password is required"
+    return True, ""
+
