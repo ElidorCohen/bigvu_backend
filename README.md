@@ -43,6 +43,10 @@ python run.py
 
 ## Access the Swagger UI
 #### The Swagger UI is accessible at http://127.0.0.1:3500/swagger.
+To gain fully authenticated, execute the /login endpoint, copy the JWT that was returned.
+Click the green button at the top right Swagger UI with text 'Authorize' and a lock icon.
+Type: Bearer <token>
+Click authorize and close buttons. Start executing authentication-required endpoints.
 
 ## Endpoints
 
