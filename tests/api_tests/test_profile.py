@@ -2,18 +2,15 @@ from flask import json
 from tests.conftest import get_auth_token
 
 
-def test_profile_success(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_profile_success(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     response = client.get('/auth/profile', headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
 
     data = json.loads(response.data)
-    assert data['username'] == username
+    assert data['username'] == user_credentials['username']
     assert 'user_id' in data
     assert 'latest_sentiment' in data
 

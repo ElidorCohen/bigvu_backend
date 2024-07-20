@@ -3,11 +3,8 @@ from bson import ObjectId
 from tests.conftest import get_auth_token
 
 
-def test_retrieve_note_success(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_retrieve_note_success(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     headers = {"Authorization": f"Bearer {token}"}
     note_payload = {"title": "Test Note", "body": "This is a test note."}
@@ -24,11 +21,8 @@ def test_retrieve_note_success(client):
     assert data["note"]["_id"] == note_id
 
 
-def test_retrieve_note_unauthorized(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_retrieve_note_unauthorized(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     headers = {"Authorization": f"Bearer {token}"}
     note_payload = {"title": "Test Note", "body": "This is a test note."}
@@ -52,11 +46,8 @@ def test_retrieve_note_unauthorized(client):
     assert data['msg'] == "You are not authorized to view this note. Subscribe to user's note first."
 
 
-def test_retrieve_note_not_found(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_retrieve_note_not_found(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -78,11 +69,8 @@ def test_retrieve_note_missing_token(client):
     assert data['message'] == "Token is missing!"
 
 
-def test_retrieve_note_invalid_token(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_retrieve_note_invalid_token(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
     invalid_token = token + "invalid"
 
     headers = {"Authorization": f"Bearer {invalid_token}"}

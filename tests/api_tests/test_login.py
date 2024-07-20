@@ -1,10 +1,10 @@
 from flask import json
 
 
-def test_login_success(client):
+def test_login_success(client, user_credentials):
     payload = {
-        "username": "Elidor00000",
-        "password": "Elidor00000"
+        "username": user_credentials['username'],
+        "password": user_credentials['password']
     }
 
     client.post('/auth/register', data=json.dumps(payload), content_type='application/json')
@@ -18,11 +18,11 @@ def test_login_success(client):
     assert 'token' in data
 
 
-def test_login_invalid_input(client):
+def test_login_invalid_input(client, user_credentials):
     test_cases = [
         (
-        {"username": "Elidor00000", "password": "Elidor"}, "Username and password must be at least 8 characters long."),
-        ({"username": "Elidor00000", "password": "wrongpassword1"}, "Invalid username or password")
+        {"username": user_credentials['username'], "password": "Elidor"}, "Username and password must be at least 8 characters long."),
+        ({"username": user_credentials['username'], "password": "wrongpassword1"}, "Invalid username or password")
     ]
 
     for payload, expected_message in test_cases:
@@ -35,10 +35,10 @@ def test_login_invalid_input(client):
         assert data['msg'] == expected_message
 
 
-def test_login_missing_fields(client):
+def test_login_missing_fields(client, user_credentials):
     test_cases = [
-        ({"username": "Elidor00000", "password": ""}, "Password is required"),
-        ({"username": "", "password": "Elidor00000"}, "Username is required"),
+        ({"username": user_credentials['username'], "password": ""}, "Password is required"),
+        ({"username": "", "password": user_credentials['password']}, "Username is required"),
         ({"username": "", "password": ""}, "Username and password are required")
     ]
 

@@ -10,15 +10,13 @@ def decode_token(token):
     return user_id
 
 
-def test_subscribe_success(client):
-    username1 = "Elidor00000"
-    password1 = "Elidor00000"
+def test_subscribe_success(client, user_credentials):
     username2 = "UserToSubscribe1"
     password2 = "UserToSubscribe123"
 
     client.post('/auth/register', data=json.dumps({"username": username2, "password": password2}), content_type='application/json')
 
-    token = get_auth_token(client, username1, password1)
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     response = client.post('/auth/login', data=json.dumps({"username": username2, "password": password2}), content_type='application/json')
     print(response.data)
@@ -34,11 +32,8 @@ def test_subscribe_success(client):
     assert 'subscription_id' in data
 
 
-def test_subscribe_self(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_subscribe_self(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
     user_id = decode_token(token)
 
     response = client.post(f'/subscribe/{user_id}', headers={"Authorization": f"Bearer {token}"})
@@ -49,11 +44,8 @@ def test_subscribe_self(client):
     assert data['msg'] == "Use can't subscribe to himself."
 
 
-def test_subscribe_invalid_id(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_subscribe_invalid_id(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     invalid_id = "thisisnotavalidid"
     response = client.post(f'/subscribe/{invalid_id}', headers={"Authorization": f"Bearer {token}"})

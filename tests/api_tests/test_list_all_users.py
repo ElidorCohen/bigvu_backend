@@ -2,11 +2,8 @@ from flask import json
 from tests.conftest import get_auth_token
 
 
-def test_list_all_users_success(client):
-    username = "Elidor00000"
-    password = "Elidor00000"
-
-    token = get_auth_token(client, username, password)
+def test_list_all_users_success(client, user_credentials):
+    token = get_auth_token(client, user_credentials['username'], user_credentials['password'])
 
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -16,7 +13,7 @@ def test_list_all_users_success(client):
 
     data = json.loads(response.data)
     assert "users" in data
-    assert len(data["users"]) >= 3 # We have 3 users in the database
+    assert len(data["users"]) >= 3  # We have 3 users in the database
 
 
 def test_list_all_users_missing_token(client):
