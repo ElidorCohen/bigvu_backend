@@ -14,9 +14,14 @@ from app.models.api_models import auth_ns, note_ns, subscribe_ns, user_ns, user_
 @auth_ns.route('/register')
 class Register(Resource):
     @auth_ns.expect(user_model, validate=True)
-    @auth_ns.response(201, 'User registered successfully')
-    @auth_ns.response(400, 'Bad request')
+    @auth_ns.doc(description='Register a new user',
+                 responses={
+                     201: 'User registered successfully',
+                     400: 'Bad request'
+                 },
+                 )
     def post(self):
+        """Register a new user"""
         data = request.json
         username = data.get('username')
         password = data.get('password')
@@ -39,8 +44,11 @@ class Register(Resource):
 @auth_ns.route('/login')
 class Login(Resource):
     @auth_ns.expect(user_model, validate=True)
-    @auth_ns.response(200, 'Login successful')
-    @auth_ns.response(400, 'Bad request')
+    @auth_ns.doc(description='Login a user',
+                 responses={
+                     200: 'Login successful',
+                     400: 'Bad request'
+                 })
     def post(self):
         """Login a user"""
         data = request.json

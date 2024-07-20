@@ -3,8 +3,8 @@ from flask import json
 
 def test_register_success(client):
     payload = {
-        "username": "TestUser1994523",
-        "password": "TestUser1994523"
+        "username": "TestUser19945232",
+        "password": "TestUser19945232"
     }
 
     response = client.post('/auth/register', data=json.dumps(payload), content_type='application/json')
