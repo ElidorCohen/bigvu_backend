@@ -1,6 +1,7 @@
 import requests
 import os
 
+
 def analyze_sentiment(text):
     url = "https://api.meaningcloud.com/sentiment-2.1"
     payload = {
@@ -13,6 +14,7 @@ def analyze_sentiment(text):
         return simplify_sentiment(response.json())
     else:
         return None
+
 
 def simplify_sentiment(sentiment_response):
     """

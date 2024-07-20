@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import certifi
 
+
 class SingletonDB:
     _instance = None
 
@@ -14,6 +15,7 @@ class SingletonDB:
             self._initialized = True
             self.client = MongoClient(app.config['MONGO_URI'], tlsCAFile=certifi.where())
             self.db = self.client.get_default_database()
+
 
 def init_db(app):
     app.mongo = SingletonDB(app)
