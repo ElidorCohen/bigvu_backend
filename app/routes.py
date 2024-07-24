@@ -85,20 +85,20 @@ class Profile(Resource):
         """Retrieve user profile"""
         user_id = AuthenticationServices.get_user_id_from_token()
 
-        user, latest_sentiment = User.find_by_id(user_id)
+        user = User.find_by_id(user_id)
         if user:
             profile = {
                 "username": user.username,
                 "user_id": user.id,
-                "latest_sentiment": latest_sentiment
+                "latest_sentiment": user.latest_sentiment
             }
             return profile, 200
         else:
             return {"msg": "User not found."}, 404
 
 
-@note_ns.route('/create_note')
-class CreateNote(Resource):
+@note_ns.route('/')
+class NoteResource(Resource):
     @note_ns.expect(note_model, validate=True)
     @note_ns.doc(description='Create a new note. Requires a valid JWT token.',
                  responses={
@@ -126,32 +126,6 @@ class CreateNote(Resource):
 
         return {"msg": "Note created successfully", "note": str(note.note_id)}, 201
 
-
-@subscribe_ns.route('/<id>')
-class Subscribe(Resource):
-    @subscribe_ns.doc(description='Subscribe to a user\'s notes. Requires a valid JWT token.',
-                      params={'id': 'The ID of the user to subscribe to'},
-                      responses={
-                          201: 'Subscription created successfully',
-                          400: 'Bad request',
-                          401: 'Unauthorized',
-                          403: 'Token is missing!'
-                      },
-                      security='Bearer Auth')
-    @token_required
-    def post(self, id):
-        """Subscribe to a user's notes"""
-        subscriber_id = AuthenticationServices.get_user_id_from_token()
-
-        subscription, message = Subscribers.subscribe_to(subscriber_id, id)
-        if subscription:
-            return {"msg": message, "subscription_id": str(subscription.subscription_id)}, 201
-        else:
-            return {"msg": message}, 400
-
-
-@note_ns.route('/retrieve_notes')
-class RetrieveNotes(Resource):
     @note_ns.doc(
         description='Retrieve notes created by the authenticated user and users they are subscribed to. Requires a valid JWT token.',
         responses={
@@ -175,6 +149,29 @@ class RetrieveNotes(Resource):
             return {"notes": [note.to_dict(convert_id=True, convert_time=True) for note in notes]}, 200
         else:
             return {"msg": "No notes found."}, 404
+
+
+@subscribe_ns.route('/<id>')
+class Subscribe(Resource):
+    @subscribe_ns.doc(description='Subscribe to a user\'s notes. Requires a valid JWT token.',
+                      params={'id': 'The ID of the user to subscribe to'},
+                      responses={
+                          201: 'Subscription created successfully',
+                          400: 'Bad request',
+                          401: 'Unauthorized',
+                          403: 'Token is missing!'
+                      },
+                      security='Bearer Auth')
+    @token_required
+    def post(self, id):
+        """Subscribe to a user's notes"""
+        subscriber_id = AuthenticationServices.get_user_id_from_token()
+
+        subscription, message = Subscribers.subscribe_to(subscriber_id, id)
+        if subscription:
+            return {"msg": message, "subscription_id": str(subscription.subscription_id)}, 201
+        else:
+            return {"msg": message}, 400
 
 
 @note_ns.route('/<id>')

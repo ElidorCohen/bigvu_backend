@@ -30,6 +30,7 @@ class Note:
     def create_note(title, body, user_id):
         db = current_app.mongo.client['bigvu']
         notes_collection = db['notes']
+        users_collection = db['users']
 
         try:
             sentiment = analyze_sentiment(body)
@@ -43,6 +44,8 @@ class Note:
         try:
             result = notes_collection.insert_one(document)
             note.note_id = result.inserted_id
+
+            users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": {"latest_sentiment": sentiment}})
         except Exception as e:
             logging.error(f"Failed to insert note: {str(e)}")
             return None, "Failed to insert note."

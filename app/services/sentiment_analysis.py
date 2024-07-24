@@ -1,5 +1,5 @@
-import requests
 import os
+import requests
 
 
 def analyze_sentiment(text):
@@ -13,6 +13,7 @@ def analyze_sentiment(text):
     if response.status_code == 200:
         return simplify_sentiment(response.json())
     else:
+        print("Error: API request failed with status code", response.status_code)
         return None
 
 
@@ -45,4 +46,5 @@ def simplify_sentiment(sentiment_response):
         ]
     }
 
+    print("Simplified Sentiment:", simplified)
     return simplified

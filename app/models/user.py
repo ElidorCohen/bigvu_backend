@@ -1,15 +1,15 @@
 import logging
-
 import bcrypt
 from bson import ObjectId
 from flask import current_app
 
 
 class User:
-    def __init__(self, username, hashed_password, user_id=None):
+    def __init__(self, username, hashed_password, user_id=None, latest_sentiment=None):
         self.username = username
         self.hashed_password = hashed_password
         self.id = user_id
+        self.latest_sentiment = latest_sentiment
 
     @staticmethod
     def hash_password(password):
@@ -68,24 +68,17 @@ class User:
     def find_by_id(user_id):
         db = current_app.mongo.client['bigvu']
         users_collection = db['users']
-        notes_collection = db['notes']
 
         try:
             user_data = users_collection.find_one({"_id": ObjectId(user_id)})
             if user_data:
-                user = User(user_data['username'], user_data['hashed_password'], str(user_data['_id']))
-
-                latest_note = notes_collection.find({"user_id": ObjectId(user_id)}).sort("created_at", -1).limit(1)
-                latest_sentiment = None
-                latest_note_list = list(latest_note)  # Convert cursor to list to check for results
-                if latest_note_list:
-                    latest_sentiment = latest_note_list[0].get("sentiment", None)
-
-                return user, latest_sentiment
-            return None, None
+                user = User(user_data['username'], user_data['hashed_password'], str(user_data['_id']),
+                            user_data.get('latest_sentiment'))
+                return user
+            return None
         except Exception as e:
             logging.error(f"Error finding user by id: {str(e)}")
-            return None, None
+            return None
 
     @staticmethod
     def get_all_users():
